@@ -245,7 +245,9 @@ function latest(j){const t=findTable(j);if(!t)throw new Error('neznámý formát
 const hhmm=d=>new Date(d).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
 const ymd=()=>new Date().toISOString().slice(0,10).replace(/-/g,'');
 
-async function getLive(){return getJ('https://raw.githubusercontent.com/vabudinmet/meteo/main/live.json?t='+Math.floor(Date.now()/60000))}
+async function getLive(){
+ const gh=location.hostname.endsWith('.github.io'),o=gh?location.hostname.split('.')[0]:'vabudinMET',r=(gh&&location.pathname.split('/')[1])||'meteoVFR';
+ return getJ('https://raw.githubusercontent.com/'+o+'/'+r+'/main/live.json?t='+Math.floor(Date.now()/60000))}
 const ageTxt=u=>{const m=Math.round((Date.now()-new Date(u))/60000);return 'staženo před '+m+' min'+(m>45?', STARÉ – zkontroluj záložku Actions':'')};
 async function loadChmi(){
  const L=await getLive(),c=L.chmi;if(!c)throw new Error(L.chmi_error||'live.json neobsahuje data ČHMÚ');
