@@ -113,7 +113,8 @@ def latest(url):
         raise ValueError('neznámý formát souboru, klíče: ' + str(list(j)[:6] if isinstance(j, dict) else type(j)))
     H = [h.strip() for h in t['header'].split(',')]
     try:
-        iE, iT, iV = H.index('EG_EL_ABBREVIATION'), H.index('DT'), H.index('VAL')
+        iE = H.index('ELEMENT') if 'ELEMENT' in H else H.index('EG_EL_ABBREVIATION')
+        iT, iV = H.index('DT'), H.index('VAL')
     except ValueError:
         raise ValueError('neočekávaná hlavička: ' + t['header'])
     out = {}
