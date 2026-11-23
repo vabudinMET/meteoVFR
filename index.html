@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meteo-kalkulačka VFR – živá data</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{--bg:#EDF2F6;--surface:#FFFFFF;--ink:#14273A;--muted:#4F6478;--line:#C5D2DD;--accent:#1D5FA6;--ok:#1B7342;--warn:#8A5A00;--bad:#B3261E;--okbg:#DDF1E5;--warnbg:#FBEFCF;--badbg:#F8DAD7;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1A26;--surface:#162636;--ink:#E4EDF5;--muted:#9DB2C4;--line:#2A3E50;--accent:#6FAEEF;--ok:#6FD39A;--warn:#E8B64C;--bad:#FF8A80;--okbg:#14382A;--warnbg:#3A2F12;--badbg:#42201D;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0E1A26;--surface:#162636;--ink:#E4EDF5;--muted:#9DB2C4;--line:#2A3E50;--accent:#6FAEEF;--ok:#6FD39A;--warn:#E8B64C;--bad:#FF8A80;--okbg:#14382A;--warnbg:#3A2F12;--badbg:#42201D;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+h1{font-size:1.5rem;line-height:1.2;margin:8px 0 2px}
+h2{font-size:1.05rem;margin:0 0 10px}
+.sub{color:var(--muted);margin:0 0 18px}
+section,details{border-top:2px solid var(--line);padding:14px 0 6px;margin:0}
+summary{cursor:pointer;font-weight:700;font-size:1.05rem;padding-bottom:10px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-bottom:12px}
+.g.one{grid-template-columns:1fr}
+label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--muted)}
+input,select,textarea,button{font:inherit;color:var(--ink)}
+input,select,textarea{min-height:44px;padding:8px 10px;border:1.5px solid var(--line);border-radius:6px;background:var(--surface);width:100%}
+textarea{min-height:76px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92rem}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+button{min-height:44px;padding:8px 14px;border:1.5px solid var(--accent);border-radius:6px;background:var(--accent);color:var(--surface);font-weight:700;cursor:pointer}
+button.alt{background:transparent;color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:-4px 0 12px}
+.chips button{min-height:36px;padding:4px 10px;font-weight:400;font-size:.88rem}
+.chk{flex-direction:row;align-items:center;gap:10px;color:var(--ink);margin-bottom:12px}
+.chk input{width:22px;min-height:22px}
+.note{font-size:.85rem;color:var(--muted);margin:0 0 12px}
+#verdict{border-radius:8px;padding:14px 16px;margin:6px 0 14px;display:flex;gap:16px;align-items:center;justify-content:space-between}
+#verdict.ok{background:var(--okbg);color:var(--ok)}#verdict.warn{background:var(--warnbg);color:var(--warn)}#verdict.bad{background:var(--badbg);color:var(--bad)}
+#verdict .t{font-size:1.2rem;font-weight:700;line-height:1.25}
+#verdict .r{font-size:2.6rem;font-weight:700;line-height:1;margin-top:4px;color:var(--ink)}
+#verdict small{display:block;color:var(--ink);font-size:.85rem;margin-top:6px}
+#verdict svg{flex:none;width:132px;height:132px}
+ul.chk-l{list-style:none;margin:0 0 14px;padding:0}
+ul.chk-l li{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.s-ok{color:var(--ok)}.s-warn{color:var(--warn)}.s-bad{color:var(--bad)}.s-ok,.s-warn,.s-bad{font-weight:700;white-space:nowrap}
+.tw{overflow-x:auto;margin-bottom:12px}
+table{border-collapse:collapse;width:100%;min-width:430px;font-size:.92rem}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:400}
+tr.best td:first-child{font-weight:700}
+footer{border-top:2px solid var(--line);padding-top:12px;font-size:.85rem;color:var(--muted)}
+#msg{font-size:.88rem;color:var(--muted);margin:-6px 0 12px;min-height:1.3em}
+.card{border-left:4px solid var(--accent);padding:2px 0 2px 12px;margin:0 0 14px}
+.card h3{font-size:1rem;margin:0 0 4px}
+.card p{margin:2px 0;font-size:.92rem}
+.card pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.85rem;margin:6px 0}
+.card button{min-height:36px;margin-top:6px;font-weight:400;font-size:.9rem}
+.err{color:var(--bad)}
+</style>
+</head>
+<body>
+<main>
+<h1>Meteo-kalkulačka VFR</h1>
+<p class="sub">Složky větru na dráze, doporučená RWY a kontrola limitů letounu i tvých minim.</p>
+
+<section>
+<h2>Let</h2>
+<div class="g">
+<label>Datum<input id="date" type="date"></label>
+<label>Čas (SEČ/SELČ)<input id="time" placeholder="14:00–16:00"></label>
+</div>
+<div class="g one"><label>Trať nebo oblast<input id="route" placeholder="LKCB – Sokolov – Kadaň – LKCB"></label></div>
+</section>
+
+<details>
+<summary>Letiště a letoun</summary>
+<div class="g">
+<label>Letiště<select id="apt"><option value="LKCB">LKCB Cheb</option><option value="LKKV">LKKV Karlovy Vary</option><option value="custom">Vlastní</option></select></label>
+<label>Elevace (ft AMSL)<input id="elev" type="number" inputmode="decimal"></label>
+<label>Deklinace (° východní)<input id="mag" type="number" inputmode="decimal"></label>
+<label>Dráhy (označení:magnetický kurz)<input id="rwys"></label>
+</div>
+<div class="g">
+<label>Max. boční vítr (kt)<input id="xw" type="number" inputmode="decimal"></label>
+<label>Max. čelní vítr (kt)<input id="hw" type="number" inputmode="decimal"></label>
+<label>Max. zadní vítr (kt)<input id="tw" type="number" inputmode="decimal"></label>
+<label>Max. teplota – osobní (°C)<input id="maxt" type="number" inputmode="decimal"></label>
+<label>Min. dohlednost (m)<input id="minvis" type="number" inputmode="decimal"></label>
+<label>Min. základna (ft AGL)<input id="minceil" type="number" inputmode="decimal"></label>
+</div>
+<p class="note">Předvyplněno podle příručky Alto 912NG (boční 12, čelní 24, zadní 5 kt; teploty −30 až 50 °C) a tvých minim. Dráhy a kurzy si před použitím ověř v AIP.</p>
+</details>
+
+<section>
+<h2>Živá data</h2>
+<p class="note">Stáhne stanici ČHMÚ Cheb, předpověď ALADIN (ČHMÚ) pro čas z pole Let a METAR/TAF LKKV. Nic se nepřepíše, dokud nestiskneš Použít.</p>
+<button id="loadall" type="button">Načíst živá data</button>
+<div id="live" aria-live="polite" style="margin-top:14px"></div>
+</section>
+
+<section>
+<h2>Počasí</h2>
+<div class="g one"><label>Vlož METAR (nebo skupinu z TAF)<textarea id="metar" placeholder="METAR LKKV 251830Z 25008KT 220V300 9999 BKN014 06/04 Q1007"></textarea></label></div>
+<button id="parse" type="button" class="alt">Načíst z textu</button>
+<p id="msg" role="status"></p>
+<div class="g">
+<label>Směr větru (°)<input id="wd" type="number" inputmode="decimal" placeholder="prázdné = VRB"></label>
+<label>Rychlost (kt)<input id="ws" type="number" inputmode="decimal"></label>
+<label>Nárazy (kt)<input id="wg" type="number" inputmode="decimal"></label>
+<label>Dohlednost (m)<input id="vis" type="number" inputmode="decimal"></label>
+<label>Rozsah směru od (°)<input id="wf" type="number" inputmode="decimal"></label>
+<label>Rozsah směru do (°)<input id="wt" type="number" inputmode="decimal"></label>
+<label>Základna BKN/OVC (ft AGL u zdroje)<input id="cb" type="number" inputmode="decimal" placeholder="prázdné = bez ceilingu"></label>
+<label>Elevace zdroje (ft AMSL)<input id="selev" type="number" inputmode="decimal"></label>
+<label>Teplota (°C)<input id="temp" type="number" inputmode="decimal"></label>
+<label>QNH (hPa)<input id="qnh" type="number" inputmode="decimal"></label>
+</div>
+<div class="chips" aria-label="Elevace zdroje">
+<button type="button" class="alt" data-v="1989">METAR LKKV: 1989 ft</button>
+<button type="button" class="alt" data-v="1585">Stanice Cheb ČHMÚ: 1585 ft</button>
+<button type="button" class="alt" data-v="same">Přímo na letišti</button>
+</div>
+<label class="chk"><input id="istrue" type="checkbox" checked>Vítr je ze zdroje v true (METAR, modely) – převést na magnetický</label>
+</section>
+
+<section aria-live="polite">
+<h2>Vyhodnocení</h2>
+<div id="verdict" class="warn"></div>
+<ul id="checks" class="chk-l"></ul>
+<div class="tw"><table><thead><tr><th>Dráha</th><th>Střed větru</th><th>Boční</th><th>Nejhorší případ</th><th>Stav</th></tr></thead><tbody id="rows"></tbody></table></div>
+<p id="da" class="note"></p>
+<details><summary>Shrnutí ke zkopírování</summary>
+<textarea id="sum" readonly rows="8"></textarea>
+<button id="copy" type="button" class="alt" style="margin-top:8px">Kopírovat</button>
+</details>
+</section>
+
+<footer>Orientační pomůcka, nenahrazuje meteorologický briefing (AIS ČR, ČHMÚ). O letu rozhoduje velitel letadla. Údaje zůstávají jen v tomto zařízení. Zdroje: ČHMÚ open data, ALADIN přes Open-Meteo, aviationweather.gov.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const PRE={LKCB:{elev:1485,mag:4,rwys:'05:50, 23:230'},LKKV:{elev:1989,mag:4,rwys:'11:110, 29:290'}};
+const DEF={apt:'LKCB',elev:1485,mag:4,rwys:'05:50, 23:230',xw:12,hw:24,tw:5,maxt:40,minvis:10000,minceil:2000,selev:1989,vis:10000,istrue:true};
+const IDS=['date','time','route','apt','elev','mag','rwys','xw','hw','tw','maxt','minvis','minceil','metar','wd','ws','wg','wf','wt','cb','selev','vis','temp','qnh','istrue'];
+const KEY='meteo-vfr-kalkulacka-v1';
+const num=id=>{const v=$(id).value;return v===''||isNaN(+v)?null:+v};
+const f1=x=>x.toFixed(1).replace('.',',');
+const save=()=>{try{const o={};IDS.forEach(i=>o[i]=i==='istrue'?$(i).checked:$(i).value);localStorage.setItem(KEY,JSON.stringify(o))}catch(e){}};
+function load(){let o={};try{o=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){}
+ IDS.forEach(i=>{const v=(i in o)?o[i]:DEF[i];if(v===undefined)return;if(i==='istrue')$(i).checked=!!v;else $(i).value=v})}
+
+function parseMetar(){
+ const t=$('metar').value.toUpperCase().replace(/\s+/g,' ');let n=0,m;
+ m=t.match(/\b(VRB|\d{3})(\d{2,3})(?:G(\d{2,3}))?KT\b/);
+ if(m){$('wd').value=m[1]==='VRB'?'':+m[1];$('ws').value=+m[2];$('wg').value=m[3]?+m[3]:'';n++}
+ m=t.match(/\b(\d{3})V(\d{3})\b/);$('wf').value=m?+m[1]:'';$('wt').value=m?+m[2]:'';
+ if(/\bCAVOK\b/.test(t)){$('vis').value=10000;$('cb').value='';n++}
+ else{
+  m=t.match(/KT (?:\d{3}V\d{3} )?(\d{4})\b/);if(m){$('vis').value=+m[1]===9999?10000:+m[1];n++}
+  let base=null;for(const c of t.matchAll(/\b(BKN|OVC|VV)(\d{3})\b/g)){const b=+c[2]*100;if(base===null||b<base)base=b}
+  $('cb').value=base===null?'':base;
+ }
+ m=t.match(/\b(M?\d{2})\/(M?\d{2})\b/);if(m){$('temp').value=+m[1].replace('M','-');n++}
+ m=t.match(/\bQ(\d{4})\b/);if(m){$('qnh').value=+m[1];n++}
+ $('msg').textContent=n?'Načteno '+n+' skupin. Zkontroluj hodnoty níže.':'V textu jsem nenašla žádné údaje.';
+ calc();save();
+}
+
+function compass(h,d,v,name){
+ const c=66,R=58,rad=a=>a*Math.PI/180;
+ let s='<svg viewBox="0 0 132 132" role="img" aria-label="Dráha '+name+' a směr větru"><circle cx="'+c+'" cy="'+c+'" r="'+R+'" fill="none" stroke="currentColor" stroke-opacity=".35" stroke-width="1.5"/>';
+ s+='<text x="'+c+'" y="11" text-anchor="middle" font-size="10" fill="currentColor">S</text>';
+ s+='<rect x="'+(c-5)+'" y="'+(c-44)+'" width="10" height="88" rx="2" fill="var(--ink)" transform="rotate('+h+' '+c+' '+c+')"/>';
+ if(d!==null){const sx=c+R*Math.sin(rad(d)),sy=c-R*Math.cos(rad(d)),ex=c+24*Math.sin(rad(d)),ey=c-24*Math.cos(rad(d));
+  s+='<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>';
+  s+='<line x1="'+sx+'" y1="'+sy+'" x2="'+ex+'" y2="'+ey+'" stroke="currentColor" stroke-width="3.5" marker-end="url(#ah)"/>'}
+ return s+'</svg>';
+}
+
+function calc(){
+ const ws=num('ws'),wd=num('wd');
+ const ver=$('verdict'),chk=$('checks'),rowsEl=$('rows');
+ const rw=$('rwys').value.split(',').map(s=>s.trim()).filter(Boolean).map(s=>{const p=s.split(':');return{n:(p[0]||'').trim(),h:+p[1]}}).filter(r=>r.n&&!isNaN(r.h));
+ if(ws===null||!rw.length){ver.className='warn';ver.innerHTML='<div><div class="t">Zadej rychlost větru a dráhy</div></div>';chk.innerHTML='';rowsEl.innerHTML='';$('da').textContent='';$('sum').value='';return}
+ const wg=Math.max(num('wg')||0,ws),mag=num('mag')||0,tr=$('istrue').checked;
+ const toM=d=>(((tr?d-mag:d)%360)+360)%360;
+ let dirs=null;
+ if(wd!==null){dirs=[toM(wd)];const a=num('wf'),b=num('wt');
+  if(a!==null&&b!==null){const span=(((b-a)%360)+360)%360;for(let i=0;i<=span;i+=5)dirs.push(toM(a+i));dirs.push(toM(b))}}
+ const comp=(d,h,v)=>{const r=(d-h)*Math.PI/180;return{hw:v*Math.cos(r),xw:v*Math.sin(r)}};
+ const L={xw:num('xw')??12,hw:num('hw')??24,tw:num('tw')??5};
+ const rows=rw.map(r=>{
+  let mean,wx,wt,wh;
+  if(dirs){mean=comp(dirs[0],r.h,ws);const g=dirs.map(d=>comp(d,r.h,wg));wx=Math.max(...g.map(c=>Math.abs(c.xw)));wt=Math.max(0,...g.map(c=>-c.hw));wh=Math.max(0,...g.map(c=>c.hw))}
+  else{mean={hw:0,xw:ws};wx=wg;wt=wg;wh=0}
+  let st='ok';
+  if(wx>L.xw||wt>L.tw||wh>L.hw)st='bad';else if(wx>=.75*L.xw||wt>=.6*L.tw)st='warn';
+  return{...r,mean,wx,wt,wh,st}});
+ let pool=rows.filter(r=>r.st!=='bad');if(!pool.length)pool=rows;
+ const best=pool.reduce((a,b)=>b.mean.hw>a.mean.hw?b:a);
+ const T={ok:'v mezích',warn:'pozor',bad:'mimo limit'};
+ const items=[];
+ items.push({l:'Dráha '+best.n+': boční vítr (nejhorší případ) '+f1(best.wx)+' z '+L.xw+' kt',s:best.wx>L.xw?'bad':best.wx>=.75*L.xw?'warn':'ok'});
+ items.push({l:'Dráha '+best.n+': zadní vítr (nejhorší případ) '+f1(best.wt)+' z '+L.tw+' kt',s:best.wt>L.tw?'bad':best.wt>=.6*L.tw?'warn':'ok'});
+ const vis=num('vis'),mv=num('minvis');
+ if(vis!==null&&mv!==null)items.push({l:'Dohlednost '+vis+' m (minimum '+mv+' m)',s:(vis===9999?10000:vis)<mv?'bad':'ok'});
+ const cb=num('cb'),mc=num('minceil'),se=num('selev'),el=num('elev');
+ if(cb!==null&&mc!==null){const adj=cb+((se??el)-el);items.push({l:'Základna na letišti ≈ '+Math.round(adj)+' ft AGL (minimum '+mc+' ft)',s:adj<mc?'bad':adj<mc+500?'warn':'ok'})}
+ else if(mc!==null)items.push({l:'Základna: bez BKN/OVC ve vstupu',s:'ok'});
+ const tp=num('temp'),mt=num('maxt');
+ if(tp!==null){items.push({l:'Teplota '+tp+' °C (limit příručky −30 až 50, osobní max '+(mt??'–')+')',s:(tp>50||tp<-30||(mt!==null&&tp>mt))?'bad':'ok'})}
+ const rank={ok:0,warn:1,bad:2};
+ const all=items.reduce((a,i)=>rank[i.s]>rank[a]?i.s:a,'ok');
+ const word={ok:'Vyhovuje',warn:'Na hraně',bad:'Nevyhovuje'}[all];
+ const rwy=best.st==='bad'?'žádná dráha v limitu':'RWY '+best.n;
+ ver.className=all;
+ const ang=dirs?dirs[0]:null;
+ ver.innerHTML='<div><div class="t">'+word+'</div><div class="r">'+(best.st==='bad'?'bez RWY':'RWY '+best.n)+'</div><small>'+(best.mean.hw>=0?'čelní ':'zadní ')+f1(Math.abs(best.mean.hw))+' kt, boční '+f1(Math.abs(best.mean.xw))+' kt '+(best.mean.xw>=0?'zprava':'zleva')+(dirs?'':' (směr neznámý, nejhorší případ)')+'</small></div>'+compass(best.h,ang,ws,best.n);
+ chk.innerHTML=items.map(i=>'<li><span>'+i.l+'</span><span class="s-'+i.s+'">'+T[i.s]+'</span></li>').join('');
+ rowsEl.innerHTML=rows.map(r=>'<tr'+(r===best?' class="best"':'')+'><td>RWY '+r.n+'</td><td>'+(r.mean.hw>=0?'čelní ':'zadní ')+f1(Math.abs(r.mean.hw))+'</td><td>'+f1(Math.abs(r.mean.xw))+' '+(r.mean.xw>=0?'zprava':'zleva')+'</td><td>boční '+f1(r.wx)+', zadní '+f1(r.wt)+'</td><td class="s-'+r.st+'">'+T[r.st]+'</td></tr>').join('');
+ const q=num('qnh');let da='';
+ if(tp!==null&&q!==null&&el!==null){const pa=el+(1013.25-q)*27,isa=15-1.98*el/1000;da='Tlaková výška ≈ '+Math.round(pa)+' ft, hustotní výška ≈ '+Math.round(pa+120*(tp-isa))+' ft.'}
+ $('da').textContent=da+(tr?' Vítr převeden na magnetický (deklinace '+mag+'° východní).':'');
+ $('sum').value=['Meteo LKCB/VFR – '+($('date').value||'bez data')+' '+($('time').value||''),$('route').value?'Trať: '+$('route').value:'',
+  'Vítr '+(wd!==null?wd+'°':'VRB')+'/'+ws+(wg>ws?'G'+wg:'')+' kt'+(num('wf')!==null?' ('+num('wf')+'V'+num('wt')+')':'')+', dohl. '+(vis??'?')+' m, základna '+(cb??'bez')+' ft',
+  'Doporučení: '+rwy+' ('+word+')'].concat(items.map(i=>'- '+i.l+': '+T[i.s])).filter(Boolean).join('\n');
+}
+
+function applyPreset(){const p=PRE[$('apt').value];if(!p)return;$('elev').value=p.elev;$('mag').value=p.mag;$('rwys').value=p.rwys}
+IDS.forEach(i=>$(i).addEventListener('input',()=>{calc();save()}));
+$('apt').addEventListener('change',()=>{applyPreset();calc();save()});
+$('parse').addEventListener('click',parseMetar);
+document.querySelectorAll('.chips button').forEach(b=>b.addEventListener('click',()=>{$('selev').value=b.dataset.v==='same'?$('elev').value:b.dataset.v;calc();save()}));
+$('copy').addEventListener('click',()=>{const s=$('sum');s.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}
+ if(!ok&&navigator.clipboard){navigator.clipboard.writeText(s.value).catch(()=>{})}$('copy').textContent='Zkopírováno'; setTimeout(()=>$('copy').textContent='Kopírovat',1500)});
+
+const WSI='0-20000-0-11406',SLAT=50.0683,SLON=12.3913,KT=1.94384,CB='https://opendata.chmi.cz/meteorology/climate/now/data/';
+const fm=(x,d=0)=>(x==null||isNaN(x))?'–':(+x).toFixed(d).replace('.',',');
+const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const live={};
+const getJ=async u=>{const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json()};
+const getT=async u=>{const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.text()};
+function findTable(o){if(o&&typeof o==='object'){if(typeof o.header==='string'&&Array.isArray(o.values))return o;for(const k in o){const r=findTable(o[k]);if(r)return r}}return null}
+function latest(j){const t=findTable(j);if(!t)throw new Error('neznámý formát souboru');
+ const H=t.header.split(',').map(x=>x.trim()),iE=H.indexOf('EG_EL_ABBREVIATION'),iT=H.indexOf('DT'),iV=H.indexOf('VAL'),o={};
+ t.values.forEach(r=>{const e=r[iE],d=r[iT];if(!o[e]||d>o[e].dt)o[e]={dt:d,v:r[iV]}});return o}
+const hhmm=d=>new Date(d).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});
+const ymd=()=>new Date().toISOString().slice(0,10).replace(/-/g,'');
+
+async function getLive(){return getJ('https://raw.githubusercontent.com/vabudinmet/meteo/main/live.json?t='+Math.floor(Date.now()/60000))}
+const ageTxt=u=>{const m=Math.round((Date.now()-new Date(u))/60000);return 'staženo před '+m+' min'+(m>45?', STARÉ – zkontroluj záložku Actions':'')};
+async function loadChmi(){
+ const L=await getLive(),c=L.chmi;if(!c)throw new Error(L.chmi_error||'live.json neobsahuje data ČHMÚ');
+ const k=v=>v==null?null:v*KT,r={dt:c.dt,dir:c.dir,spd:k(c.spd),gust:k(c.gust),temp:c.temp};live.chmi=r;const ce=c.ceil;
+ return '<h3>Stanice ČHMÚ Cheb ('+(c.dt?hhmm(c.dt):'?')+', '+ageTxt(L.updated)+')</h3><p>Vítr '+fm(r.dir)+'° / '+fm(r.spd)+' kt, nárazy '+fm(r.gust)+' kt, teplota '+fm(r.temp,1)+' °C</p>'+
+  (ce?'<p>Ceilometr, 1. vrstva: '+fm(ce.h)+' (pokrytí '+fm(ce.c)+'), '+hhmm(ce.dt)+'. Jednotku ověř v metadatech ČHMÚ, do kalkulačky se nepřepisuje.</p>':'<p>Ceilometr: pro stanici nic nenalezeno.</p>')+
+  '<button type="button" class="alt" data-act="chmi">Použít vítr a teplotu</button>'}
+
+async function loadAladin(){
+ const d=$('date').value||new Date().toISOString().slice(0,10),tx=$('time').value;
+ let a=14,b=16,m=tx.match(/(\d{1,2})(?:[:.]\d{2})?\s*[–-]\s*(\d{1,2})/);
+ if(m){a=+m[1];b=+m[2]}else if((m=tx.match(/(\d{1,2})/))){a=b=+m[1]}
+ const j=await getJ('https://api.open-meteo.com/v1/forecast?latitude='+SLAT+'&longitude='+SLON+'&hourly=wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,pressure_msl,visibility,cloud_cover_low&models=chmi_aladin_seamless&wind_speed_unit=kn&timezone=Europe%2FPrague&forecast_days=3');
+ const h=j.hourly,K=p=>Object.keys(h).find(k=>k===p||k.indexOf(p+'_')===0),R=[];
+ h.time.forEach((t,i)=>{const hr=+t.slice(11,13);if(t.slice(0,10)===d&&hr>=a&&hr<=b)R.push({hr,dir:h[K('wind_direction_10m')][i],spd:h[K('wind_speed_10m')][i],gust:h[K('wind_gusts_10m')][i],vis:h[K('visibility')][i],low:h[K('cloud_cover_low')][i],t:h[K('temperature_2m')][i],q:h[K('pressure_msl')][i]})});
+ if(!R.length)throw new Error('pro '+d+' '+a+'–'+b+' h nejsou data (model sahá na 3 dny)');
+ live.al=R;
+ return '<h3>ALADIN ČHMÚ, '+d+', '+a+'–'+b+' h (místní čas)</h3><p>'+R.map(r=>r.hr+' h: '+fm(r.dir)+'°/'+fm(r.spd)+' kt, nárazy '+fm(r.gust)+', nízká oblačnost '+fm(r.low)+' %, dohl. '+fm(r.vis/1000,1)+' km').join('<br>')+'</p><p>Model základnu oblačnosti nepočítá, použij METAR/TAF, ceilometr a kameru.</p><button type="button" class="alt" data-act="al">Použít nejhorší případ z okna</button>'}
+
+async function loadMetar(){
+ const L=await getLive();if(!L.metar)throw new Error(L.metar_error||'live.json neobsahuje METAR');
+ const m=L.metar.trim().split('\n')[0];live.metar=m;
+ return '<h3>LKKV (22 NM, o ~500 ft výš, '+ageTxt(L.updated)+')</h3><pre>'+esc(m)+'</pre><pre>'+esc(L.taf||L.taf_error||'TAF nedostupný')+'</pre><button type="button" class="alt" data-act="metar">Použít METAR (základna, dohlednost)</button>'}
+
+async function loadAll(){
+ const box=$('live');box.innerHTML='<p class="note">Načítám…</p>';
+ const jobs=[['ČHMÚ Cheb',loadChmi],['ALADIN',loadAladin],['METAR/TAF LKKV',loadMetar]];
+ const res=await Promise.allSettled(jobs.map(j=>j[1]()));
+ box.innerHTML=res.map((r,i)=>'<div class="card">'+(r.status==='fulfilled'?r.value:'<h3>'+jobs[i][0]+'</h3><p class="err">Nepodařilo se načíst ('+esc(r.reason&&r.reason.message||r.reason)+'). Zdroj může blokovat přístup z prohlížeče, nebo chybí připojení. Vlož údaje ručně.</p>')+'</div>').join('');
+}
+$('loadall').addEventListener('click',loadAll);
+$('live').addEventListener('click',e=>{const a=e.target.dataset&&e.target.dataset.act;if(!a)return;
+ if(a==='chmi'){const r=live.chmi;$('wd').value=r.dir!=null?Math.round(r.dir):'';$('ws').value=r.spd!=null?Math.round(r.spd):'';$('wg').value=r.gust!=null?Math.round(r.gust):'';$('wf').value='';$('wt').value='';if(r.temp!=null)$('temp').value=Math.round(r.temp);$('selev').value=1585;$('istrue').checked=true}
+ if(a==='al'){const R=live.al,w=R.reduce((x,y)=>(y.gust>x.gust?y:x),R[0]),ds=R.map(r=>r.dir),lo=Math.min(...ds),hi=Math.max(...ds);
+  $('wd').value=Math.round(w.dir);$('ws').value=Math.round(Math.max(...R.map(r=>r.spd)));$('wg').value=Math.round(Math.max(...R.map(r=>r.gust)));
+  $('wf').value=hi-lo<=180?Math.round(lo):'';$('wt').value=hi-lo<=180?Math.round(hi):'';$('vis').value=Math.round(Math.min(...R.map(r=>r.vis)));
+  $('temp').value=Math.round(R.reduce((s,r)=>s+r.t,0)/R.length);$('qnh').value=Math.round(R.reduce((s,r)=>s+r.q,0)/R.length);$('istrue').checked=true}
+ if(a==='metar'){$('metar').value=live.metar;$('selev').value=1989;parseMetar();return}
+ calc();save()});
+load();calc();
+</script>
+</body>
+</html>
