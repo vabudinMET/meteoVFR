@@ -81,8 +81,7 @@ for key, url in (('metar', 'https://aviationweather.gov/api/data/metar?ids=LKKV&
 
 with open('live.json', 'w', encoding='utf-8') as f:
     json.dump(out, f, ensure_ascii=False, indent=1)
-print(json.dumps(out, ensure_ascii=False)[:600])"""Stáhne stanici ČHMÚ Cheb a METAR/TAF LKKV a uloží je do live.json (spouští GitHub Actions)."""
-import json, urllib.request, datetime as dt
+print(json.dumps(out, ensure_ascii=False)[:600])
 
 WSI = '0-20000-0-11406'
 BASE = 'https://opendata.chmi.cz/meteorology/climate/now/data/'
