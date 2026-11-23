@@ -1,0 +1,18 @@
+name: live-data
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 fetch_live.py
+      - run: |
+          git config user.name "live-data-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add live.json
+          git diff --cached --quiet || (git commit -m "live data" && git push)
